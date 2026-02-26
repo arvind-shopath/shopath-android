@@ -1,17 +1,15 @@
 # .gitignore for Shopath Android App
 
-# Gradle files
+# Gradle build cache
 .gradle/
 build/
 app/build/
 *.class
 
-# Local config
+# Local config files (sensitive - commit नहीं होतीं)
 local.properties
-*.properties
-!gradle.properties
 
-# Android Studio
+# Android Studio IDE files
 *.iml
 .idea/
 .DS_Store
