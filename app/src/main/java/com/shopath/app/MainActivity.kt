@@ -88,6 +88,10 @@ class MainActivity : AppCompatActivity() {
         webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         webSettings.mediaPlaybackRequiresUserGesture = false
 
+        // Append custom string to User-Agent to detect app
+        val defaultUserAgent = webSettings.userAgentString
+        webSettings.userAgentString = "$defaultUserAgent -ShopathApp"
+
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
