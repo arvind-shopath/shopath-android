@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shopath</string>
+    <string name="app_tagline">वही दुकान, सही सामान</string>
+    <string name="no_internet">इंटरनेट कनेक्शन नहीं है</string>
+    <string name="retry">दोबारा प्रयास करें</string>
+</resources>

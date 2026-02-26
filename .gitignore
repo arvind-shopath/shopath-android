@@ -1,0 +1,32 @@
+# .gitignore for Shopath Android App
+
+# Gradle files
+.gradle/
+build/
+app/build/
+*.class
+
+# Local config
+local.properties
+*.properties
+!gradle.properties
+
+# Android Studio
+*.iml
+.idea/
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystore files (NEVER commit these!)
+*.jks
+*.keystore
+
+# Generated files
+gen/
+out/
+bin/
+
+# Logs
+*.log

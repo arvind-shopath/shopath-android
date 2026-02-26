@@ -1,0 +1,77 @@
+name: 🚀 Build Shopath APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Manual trigger - आप खुद भी build शुरू कर सकते हैं
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Debug & Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Code checkout
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Java 17 setup
+      - name: ☕ Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Step 3: Gradle wrapper executable permission
+      - name: 🔧 Make gradlew executable
+        run: chmod +x gradlew
+
+      # Step 4: Build Debug APK (बिना signing के)
+      - name: 🏗️ Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      # Step 5: Debug APK को artifact के रूप में save करें
+      - name: 📦 Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shopath-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      # Step 6: Release APK build (Play Store के लिए - signing जरूरी है)
+      - name: 🏗️ Build Release APK
+        run: ./gradlew assembleRelease --no-daemon
+        env:
+          # ये secrets आप GitHub पर add करेंगे (Play Store के लिए)
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        continue-on-error: true  # अभी signing नहीं है तो error ok है
+
+      # Step 7: Upload Release APK (अगर build हुई)
+      - name: 📦 Upload Release APK
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: Shopath-Release-APK
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 90
+        continue-on-error: true
+
+      # Step 8: Build summary
+      - name: 📋 Build Summary
+        run: |
+          echo "## ✅ Build Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📱 APK Files:" >> $GITHUB_STEP_SUMMARY
+          find app/build/outputs/apk -name "*.apk" | while read f; do
+            size=$(du -h "$f" | cut -f1)
+            echo "- \`$(basename $f)\` - Size: $size" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Download:" >> $GITHUB_STEP_SUMMARY
+          echo "Actions tab → इस run पर click करें → Artifacts section में APK download करें" >> $GITHUB_STEP_SUMMARY
