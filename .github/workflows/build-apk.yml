@@ -11,52 +11,74 @@ jobs:
   build:
     name: Build Debug & Release APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # GitHub Release बनाने के लिए
 
     steps:
-      # Step 1: Code checkout
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Java 17 setup
       - name: ☕ Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: gradle
 
-      # Step 3: Gradle Wrapper JAR download (binary file जो repo में नहीं होती)
       - name: 📦 Download Gradle Wrapper JAR
         run: |
           mkdir -p gradle/wrapper
           curl -sL -o gradle/wrapper/gradle-wrapper.jar \
             "https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar"
 
-      # Step 4: gradlew को executable बनाएं
       - name: 🔧 Make gradlew executable
         run: chmod +x gradlew
 
-      # Step 5: Debug APK build
       - name: 🏗️ Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon
 
-      # Step 6: Debug APK upload (download के लिए)
-      - name: 📦 Upload Debug APK
+      - name: 📋 Get Version Info
+        id: version
+        run: |
+          VERSION=$(grep "versionName" app/build.gradle | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          BUILD=$(grep "versionCode" app/build.gradle | head -1 | grep -o '[0-9]*')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build=$BUILD" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION-build$BUILD" >> $GITHUB_OUTPUT
+          echo "apk_path=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)" >> $GITHUB_OUTPUT
+
+      - name: 🏷️ Create GitHub Release & Upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Shopath App v${{ steps.version.outputs.version }}"
+          body: |
+            ## 📱 Shopath Android App
+            **वही दुकान, सही सामान**
+
+            ### Download करें:
+            नीचे `Assets` में **Shopath-v${{ steps.version.outputs.version }}.apk** पर click करें
+
+            ### Install कैसे करें:
+            1. APK download करें
+            2. Phone में Settings → Security → Unknown Sources ON करें
+            3. APK file open करके Install करें
+          files: ${{ steps.version.outputs.apk_path }}
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Upload Artifact (backup)
         uses: actions/upload-artifact@v4
         with:
           name: Shopath-Debug-APK
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      # Step 7: Build Summary
       - name: 📋 Build Summary
         run: |
-          echo "## ✅ Build Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build & Release Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📱 APK Files:" >> $GITHUB_STEP_SUMMARY
-          find app/build/outputs/apk -name "*.apk" 2>/dev/null | while read f; do
-            size=$(du -h "$f" | cut -f1)
-            echo "- \`$(basename $f)\` - Size: $size" >> $GITHUB_STEP_SUMMARY
-          done
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📥 APK Download करने के लिए:" >> $GITHUB_STEP_SUMMARY
-          echo "Actions tab → इस run पर click → Artifacts section → **Shopath-Debug-APK**" >> $GITHUB_STEP_SUMMARY
+          echo "APK GitHub Releases पर upload हो गई है!" >> $GITHUB_STEP_SUMMARY
