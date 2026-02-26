@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'in.shopath.app'
+    namespace 'com.shopath.app'
     compileSdk 34
 
     defaultConfig {
-        applicationId "in.shopath.app"
+        applicationId "com.shopath.app"
         minSdk 21
         targetSdk 34
         versionCode 1
